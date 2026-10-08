@@ -129,6 +129,7 @@ npm run preview      # Build lokal ansehen (http://127.0.0.1:4173/)
 npm run icons        # PWA-Icons neu erzeugen
 npm run screenshots  # Screenshots aller Geräte (Dev-Server muss laufen)
 node scripts/interaction-test.mjs   # klickt/zieht alle Bedienelemente automatisiert
+node scripts/spotify-mock-test.mjs  # Login, Bibliothek, Wiedergabe gegen gemockte Spotify-API
 ```
 
 Die Skripte nutzen `playwright-core` mit einem vorhandenen Chromium (Pfad per `CHROME=/pfad/zu/chrome`).
