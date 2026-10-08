@@ -9,4 +9,4 @@ app.start().catch((e) => {
   app.toast(`Start fehlgeschlagen: ${(e as Error).message}`, 'error');
 });
 
-if (import.meta.env.DEV) (window as unknown as { __app: App }).__app = app;
+if (import.meta.env.DEV || new URLSearchParams(location.search).has('debug')) (window as unknown as { __app: App }).__app = app;

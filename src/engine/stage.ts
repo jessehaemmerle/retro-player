@@ -531,7 +531,9 @@ export class Stage {
     }
     this.skipped = 0;
     this.prevRendered = true;
-    const dt = Math.min(raw, 0.1);
+    // rAF-Zeitstempel können nach langen Ladeaufgaben vor dem Timer-Start liegen →
+    // negative Zeitschritte verhindern (sie lassen Dämpfungen explodieren)
+    const dt = Math.max(0, Math.min(raw, 0.1));
     const t = this.timer.getElapsed();
     if (this.camAnim) {
       const a = this.camAnim;

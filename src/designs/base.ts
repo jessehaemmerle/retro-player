@@ -64,6 +64,7 @@ export abstract class Design {
 
 /** Kritisch gedämpfte Annäherung (framerate-unabhängig). */
 export function damp(current: number, target: number, lambda: number, dt: number): number {
+  if (!(dt > 0)) return current;
   return current + (target - current) * (1 - Math.exp(-lambda * dt));
 }
 
