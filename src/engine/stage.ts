@@ -162,6 +162,7 @@ export class Stage {
       this.camAnim = null;
       this.lastInteraction = performance.now();
     });
+    this.controls.addEventListener('change', () => (this.lastInteraction = performance.now()));
 
     this.scene.add(this.deviceRoot, this.envRoot);
     this.key.castShadow = true;
@@ -407,6 +408,7 @@ export class Stage {
   /** Sanfte Rückkehr zur Ausgangsperspektive. */
   resetView() {
     if (!this.spec) return;
+    this.lastInteraction = performance.now();
     const to = this.controls.target.clone().addScaledVector(this.cameraDirection(this.spec.camera), this.fitDistance);
     this.camAnim = { from: this.camera.position.clone(), to, t: 0 };
   }
@@ -475,6 +477,7 @@ export class Stage {
   }
 
   private resize() {
+    this.lastInteraction = performance.now();
     const w = Math.max(1, this.container.clientWidth);
     const h = Math.max(1, this.container.clientHeight);
     const dprCap = this.quality === 'high' ? 2 : this.quality === 'medium' ? 1.5 : 1;
@@ -508,9 +511,27 @@ export class Stage {
     this.lastInteraction = performance.now();
   }
 
+  /** Gleitender Mittelwert der Bildzeit in ms (für automatische Qualitätsanpassung). */
+  frameMs = 16;
+  /** Wenn true, darf bei Stillstand seltener gerendert werden (Energiesparen). */
+  allowThrottle = false;
+  private skipped = 0;
+  private prevRendered = false;
+
   private frame(time?: number) {
     this.timer.update(time);
-    const dt = Math.min(this.timer.getDelta(), 0.1);
+    const raw = this.timer.getDelta();
+    // Bildzeit nur messen, wenn das vorige Bild tatsächlich gerendert wurde
+    if (this.prevRendered && raw > 0 && raw < 0.5) this.frameMs += (raw * 1000 - this.frameMs) * 0.05;
+    // Energiesparen: bei Stillstand nur ~2 Bilder pro Sekunde rendern
+    if (this.allowThrottle && this.idleMs > 5000 && !this.camAnim && this.skipped < 30) {
+      this.skipped++;
+      this.prevRendered = false;
+      return;
+    }
+    this.skipped = 0;
+    this.prevRendered = true;
+    const dt = Math.min(raw, 0.1);
     const t = this.timer.getElapsed();
     if (this.camAnim) {
       const a = this.camAnim;

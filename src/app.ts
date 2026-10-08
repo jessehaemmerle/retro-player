@@ -97,7 +97,8 @@ export class App {
     this.playback.dispose();
     this.playback = sp;
     this.bindPlayback();
-    await sp.init();
+    // Nicht blockieren: Das SDK lädt im Hintergrund, die Geräte erscheinen sofort
+    sp.init().catch((e) => this.toast(`Spotify: ${(e as Error).message}`, 'error'));
   }
 
   useDemo() {
@@ -111,6 +112,7 @@ export class App {
     const pb = this.playback;
     this.unsubs = [
       pb.events.on('track', (t) => this.onTrack(t)),
+      pb.events.on('state', () => this.stage?.markInteraction()),
       pb.events.on('error', (m) => this.toast(m, 'error')),
       pb.events.on('notice', (m) => this.toast(m)),
     ];
@@ -175,6 +177,7 @@ export class App {
     design.onTrack(this.playback.state.track, this.art);
     design.syncImmediately(this.frameState(0, 0));
     this.stage.updateContactShadow();
+    this.stage.markInteraction();
     localStorage.setItem(LS_DESIGN, id);
     this.events.emit('design', id);
     this.events.emit('loading', false);
@@ -213,9 +216,31 @@ export class App {
     };
   }
 
+  private slowTime = 0;
+  private autoQualityDone = false;
+
   private frame(dt: number, t: number) {
     const f = this.frameState(dt, t);
     this.audio.update(dt, f.playing, f.volume, f.positionMs);
     this.current?.update(f);
+    // Stillstand → Rendering drosseln (Musik pausiert, keine Bedienung)
+    this.stage.allowThrottle = !f.playing && !this.interaction.isDragging;
+    this.autoQuality(dt);
+  }
+
+  /** Senkt die Qualität einmalig automatisch, wenn die GPU dauerhaft zu langsam ist. */
+  private autoQuality(dt: number) {
+    if (this.autoQualityDone || localStorage.getItem(LS_QUALITY) || new URLSearchParams(location.search).has('quality')) return;
+    if (this.quality === 'low') return;
+    if (this.stage.frameMs > 34) this.slowTime += dt;
+    else this.slowTime = Math.max(0, this.slowTime - dt * 0.5);
+    if (this.slowTime > 4) {
+      this.slowTime = 0;
+      const next: Quality = this.quality === 'high' ? 'medium' : 'low';
+      this.quality = next;
+      this.stage.setQuality(next);
+      this.toast(`Darstellung automatisch auf „${next === 'medium' ? 'Mittel' : 'Niedrig'}“ reduziert (änderbar in den Einstellungen).`);
+      if (next === 'low') this.autoQualityDone = true;
+    }
   }
 }
