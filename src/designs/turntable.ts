@@ -59,6 +59,7 @@ export class Turntable extends Design {
   private sleeve = new THREE.Group();
   private armYaw = new THREE.Group();
   private armPitch = new THREE.Group();
+  private headshell = new THREE.Group();
   private cueLever = new THREE.Group();
   private volumeKnob!: THREE.Group;
   private speedKnob!: THREE.Group;
@@ -322,7 +323,7 @@ export class Turntable extends Design {
     base.add(as.group);
 
     // Headshell am Rohrende → zeigt auf den Nadelpunkt (ARM_L, ., 0)
-    const head = new THREE.Group();
+    const head = this.headshell;
     const tip = new THREE.Vector3(ARM_L, 0, 0);
     const start = new THREE.Vector3(endX, 0, 0.028);
     head.position.copy(start);
@@ -437,7 +438,7 @@ export class Turntable extends Design {
     const cardEdge = new THREE.MeshPhysicalMaterial({ color: '#d9d2c4', roughness: 0.85, normalMap: paperNormal(), normalScale: new THREE.Vector2(0.4, 0.4) });
     const body = new THREE.Mesh(roundedBox(s, 0.0035, s, mm(0.8), 2), cardEdge);
     const top = new THREE.Mesh(new THREE.PlaneGeometry(s - 0.0016, s - 0.0016).rotateX(-Math.PI / 2), this.sleeveArt);
-    top.position.y = 0.00176;
+    top.position.y = 0.00175 + 0.0003; // deutlich über dem Karton (kein Z-Fighting)
     this.sleeve.add(body, top);
     this.sleeve.position.set(-0.44, 0.00175, 0.11);
     this.sleeve.rotation.y = 0.26;
@@ -653,8 +654,8 @@ export class Turntable extends Design {
     const omegaTarget = motor ? (RPM[this.speed] / 60) * Math.PI * 2 : 0;
     this.omega = damp(this.omega, omegaTarget, motor ? 2.4 : 1.1, dt);
     this.platter.rotation.y -= this.omega * dt;
-    this.ledMat.emissiveIntensity = motor ? 9 : 0;
-    this.strobeMat.emissiveIntensity = motor ? 6 : 0;
+    this.ledMat.emissiveIntensity = motor ? 16 : 0;
+    this.strobeMat.emissiveIntensity = motor ? 10 : 0;
 
     // --- Knöpfe
     this.displayedVolume = damp(this.displayedVolume, f.volume, 18, dt);

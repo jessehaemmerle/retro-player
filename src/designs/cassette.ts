@@ -95,7 +95,7 @@ export class Cassette {
       uv.setXY(i, (pos.getX(i) - bb.min.x) / (bb.max.x - bb.min.x), (pos.getY(i) - bb.min.y) / (bb.max.y - bb.min.y));
     const labelMat = new THREE.MeshPhysicalMaterial({ map: this.labelTex, roughness: 0.6, normalMap: paperNormal(), normalScale: new THREE.Vector2(0.3, 0.3), sheen: 0.2, sheenRoughness: 0.6 });
     const label = new THREE.Mesh(labGeo, labelMat);
-    label.position.z = mm(6.02);
+    label.position.z = mm(6.15);
     g.add(label);
     this.labelAspect = (bb.max.x - bb.min.x) / (bb.max.y - bb.min.y);
 

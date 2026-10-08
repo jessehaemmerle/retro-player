@@ -97,7 +97,6 @@ export class App {
     this.playback.dispose();
     this.playback = sp;
     this.bindPlayback();
-    this.events.emit('playback', sp);
     await sp.init();
   }
 
@@ -105,7 +104,6 @@ export class App {
     this.playback.dispose();
     this.playback = new DemoController();
     this.bindPlayback();
-    this.events.emit('playback', this.playback);
   }
 
   private bindPlayback() {
@@ -117,6 +115,7 @@ export class App {
       pb.events.on('notice', (m) => this.toast(m)),
     ];
     this.onTrack(pb.state.track);
+    this.events.emit('playback', pb);
   }
 
   private async onTrack(track: TrackInfo | null) {

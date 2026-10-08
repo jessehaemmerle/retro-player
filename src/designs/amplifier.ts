@@ -49,7 +49,7 @@ export class Amplifier extends Design {
     fill: { position: [1.5, 0.7, 1.4], intensity: 0.25, color: '#dfe8ff' },
     camera: { fov: 30, target: [0, 0.085, 0.06], azimuth: 14, polar: 70, frame: [0.66, 0.34], azimuthRange: 50, polarRange: [30, 88], zoom: [0.38, 1.6] },
     contactShadow: { width: 1.0, depth: 0.8, height: 0.12, blur: 2.4, darkness: 1.5, opacity: 0.95 },
-    bloom: { strength: 0.22, radius: 0.45, threshold: 3.2 },
+    bloom: { strength: 0.2, radius: 0.3, threshold: 3.2 },
   };
 
   private dialCanvas = makeCanvas(2048, 346);

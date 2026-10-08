@@ -18,6 +18,8 @@ import type { TrackInfo } from '../playback/types';
 const W = 0.134, DZ = 0.142, H = 0.029;
 const LID_T = 0.008;
 const BODY_TOP = 0.002 + H - LID_T;
+const BEVEL = 0.004; // Fase des Gehäuses vergrößert die Außenmaße
+const FRONT = DZ / 2 + BEVEL;
 const CORNER = 0.026;
 const WIN = { x: 0, z: -0.012, r: 0.038 };
 const CD_R = 0.06;
@@ -213,7 +215,7 @@ export class Discman extends Design {
     p.text('▶ ❚❚', px(0.035), pz(0.0665), { size: 2.2, weight: 700 });
     p.text('▶▶', px(0.058), pz(0.0655), { size: 2.2, weight: 700 });
     p.text('■ STOP', px(0.0418), pz(0.0355), { size: 1.9, weight: 700, spacing: 0.2, align: 'left' });
-    p.text('OPEN ▶', px(W / 2 - 0.013), pz(0.018), { size: 1.9, weight: 700, spacing: 0.2, align: 'right' });
+    p.text('◀ OPEN', px(-0.008), pz(DZ / 2 - 0.0045), { size: 1.9, weight: 700, spacing: 0.2 });
     const lidMat = p.material({ clearcoat: 0.6, clearcoatRoughness: 0.12 }, 0);
     lidMat.anisotropy = 0.5;
     lidMat.anisotropyMap = radialAnisotropy(0.2);
@@ -265,7 +267,7 @@ export class Discman extends Design {
   private buildSides() {
     // Lautstärkerad links
     this.wheel = new THREE.Group();
-    this.wheel.position.set(-W / 2 + 0.003, H / 2 + 0.001, 0.035);
+    this.wheel.position.set(-W / 2 - BEVEL + 0.0035, H / 2 - 0.0035, 0.035);
     const d = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.004, 48, 1, true), knurledMetal(48, { color: new THREE.Color(0.25, 0.26, 0.28) }));
     const caps = new THREE.Mesh(new THREE.CylinderGeometry(0.0088, 0.0088, 0.0038, 32), plastic('#2a2b2e'));
     this.wheel.add(d, caps);
@@ -275,22 +277,27 @@ export class Discman extends Design {
     this.root.add(this.wheel);
     // HOLD-Schieber vorne
     const holdSlot = new THREE.Mesh(roundedBox(0.016, 0.004, 0.002, mm(0.8)), paint('#0c0c0c', 0.7));
-    holdSlot.position.set(-0.035, H / 2 - 0.002, DZ / 2 + 0.0002);
+    holdSlot.position.set(-0.033, H / 2 - 0.002, FRONT + 0.0002);
     this.holdKnob = new THREE.Mesh(roundedBox(0.006, 0.0032, 0.003, mm(0.8)), plastic('#e2621b', { gloss: 0.6 }));
-    this.holdKnob.position.set(-0.039, H / 2 - 0.002, DZ / 2 + 0.0008);
+    this.holdKnob.position.set(-0.037, H / 2 - 0.002, FRONT + 0.0008);
     this.root.add(holdSlot, this.holdKnob);
-    // OPEN-Schieber rechts
+    // OPEN-Schieber vorne
+    const openSlot = new THREE.Mesh(roundedBox(0.02, 0.0045, 0.002, mm(0.8)), paint('#0c0c0c', 0.7));
+    openSlot.position.set(-0.008, H / 2 - 0.002, FRONT + 0.0002);
+    this.root.add(openSlot);
     this.openSlider = new THREE.Group();
-    const os = new THREE.Mesh(roundedBox(0.003, 0.005, 0.014, mm(1)), plastic('#8f9297', { gloss: 0.5 }));
+    const os = new THREE.Mesh(roundedBox(0.009, 0.0042, 0.0035, mm(1)), plastic('#c9ccd1', { gloss: 0.5 }));
+    const ribs = new THREE.Mesh(roundedBox(0.006, 0.0006, 0.0037, mm(0.2)), paint('#6d7076', 0.5));
+    os.add(ribs);
     this.openSlider.add(os);
-    this.openSlider.position.set(W / 2 + 0.0008, BODY_TOP - 0.004, 0.018);
+    this.openSlider.position.set(-0.004, H / 2 - 0.002, FRONT + 0.001);
     this.root.add(this.openSlider);
     // Kopfhörerbuchse & Line-Out vorne
     for (const x of [0.022, 0.034]) {
       const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0028, 0.0008, 10, 24), chrome());
-      ring.position.set(x, H / 2 - 0.002, DZ / 2 + 0.0003);
+      ring.position.set(x, H / 2 - 0.002, FRONT + 0.0003);
       const hole = new THREE.Mesh(new THREE.CircleGeometry(0.002, 20), paint('#020202', 0.9));
-      hole.position.set(x, H / 2 - 0.002, DZ / 2 + 0.0002);
+      hole.position.set(x, H / 2 - 0.002, FRONT + 0.0002);
       this.root.add(ring, hole);
     }
   }
@@ -439,8 +446,8 @@ export class Discman extends Design {
       b.press = Math.max(0, b.press - dt * 7);
       b.cap.position.y = LID_T - 0.0003 - Math.sin(Math.min(1, b.press) * Math.PI) * 0.0009;
     }
-    this.holdKnob.position.x = damp(this.holdKnob.position.x, this.hold ? -0.031 : -0.039, 20, dt);
-    this.openSlider.position.z = damp(this.openSlider.position.z, this.open ? 0.012 : 0.018, 20, dt);
+    this.holdKnob.position.x = damp(this.holdKnob.position.x, this.hold ? -0.029 : -0.037, 20, dt);
+    this.openSlider.position.x = damp(this.openSlider.position.x, this.open ? -0.012 : -0.004, 20, dt);
     this.shownVolume = damp(this.shownVolume, f.volume, 16, dt);
     this.wheel.rotation.y = -this.shownVolume * Math.PI * 1.6;
 

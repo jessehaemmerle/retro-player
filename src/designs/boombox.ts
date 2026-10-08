@@ -11,7 +11,7 @@ import type { SceneSpec } from '../engine/stage';
 import { disc, extrudePanel, filletProfile, lathe, mm, roundedBox, roundedRectPath, roundedRectShape, shadows, tube } from '../engine/geom';
 import { chrome, emissive, paint, plastic, rubber, tintedWindow } from '../engine/materials';
 import { PanelPainter } from '../engine/panel';
-import { canvasTexture, makeCanvas, perforatedAlpha, perforatedNormal, speakerConeColor, withRepeat } from '../engine/textures';
+import { canvasTexture, makeCanvas, perforatedAlpha, speakerConeColor, withRepeat } from '../engine/textures';
 import { toSegmentText } from '../engine/fonts';
 import type { TrackInfo } from '../playback/types';
 
@@ -151,8 +151,11 @@ export class Boombox extends Design {
   private buildSpeaker(r: number, kind: 'woofer' | 'tweeter'): THREE.Group {
     const g = new THREE.Group();
     // Lautsprecherkorb/Frontring
-    const frame = new THREE.Mesh(lathe([[r * 0.94, 0], [r, 0], [r, -0.002], [r * 0.93, -0.003]], 64), paint('#0b0b0b', 0.5));
+    const frameMat = paint('#0b0b0b', 0.5);
+    frameMat.side = THREE.DoubleSide;
+    const frame = new THREE.Mesh(lathe([[r * 0.94, 0], [r, 0], [r, -0.002], [r * 0.93, -0.003]], 64), frameMat);
     frame.rotation.x = Math.PI / 2;
+    frame.position.z = -0.009;
     g.add(frame);
     const cone = new THREE.Group();
     const coneR = r * 0.8;
@@ -163,18 +166,18 @@ export class Boombox extends Design {
       const a = (i / 10) * Math.PI;
       sProf.push([coneR + (r * 0.92 - coneR) * (0.5 - 0.5 * Math.cos(a)), Math.sin(a) * r * 0.05 - 0.003]);
     }
-    const surround = new THREE.Mesh(lathe(sProf, 64), rubber('#141414', { roughness: 0.6 }));
+    const surround = new THREE.Mesh(lathe(sProf, 64), rubber('#141414', { roughness: 0.7, side: THREE.DoubleSide }));
     surround.rotation.x = Math.PI / 2;
     cone.add(surround);
     if (kind === 'woofer') {
-      const depth = r * 0.32;
+      const depth = Math.min(r * 0.32, 0.011);
       const membrane = new THREE.Mesh(
         lathe([[capR, -0.003 - depth], [coneR * 0.6, -0.003 - depth * 0.45], [coneR, -0.003]], 64),
-        new THREE.MeshPhysicalMaterial({ map: speakerConeColor('#1f1d1b'), roughness: 0.85, sheen: 0.3, sheenColor: new THREE.Color('#5a5650') }),
+        new THREE.MeshPhysicalMaterial({ map: speakerConeColor('#1d1b19'), roughness: 0.92, specularIntensity: 0.4, side: THREE.DoubleSide }),
       );
       membrane.rotation.x = Math.PI / 2;
       cone.add(membrane);
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(capR * 1.25, 32, 16, 0, Math.PI * 2, 0, 0.7), new THREE.MeshPhysicalMaterial({ color: '#121212', roughness: 0.35, clearcoat: 0.5 }));
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(capR * 1.25, 32, 16, 0, Math.PI * 2, 0, 0.7), new THREE.MeshPhysicalMaterial({ color: '#0f0f0f', roughness: 0.7, specularIntensity: 0.4 }));
       cap.rotation.x = Math.PI / 2;
       cap.position.z = -0.003 - depth - capR * 1.25 * Math.cos(0.7) + 0.004;
       cone.add(cap);
@@ -185,6 +188,8 @@ export class Boombox extends Design {
       dome.scale.y = 0.6;
       cone.add(dome);
     }
+    cone.position.z = -0.009;
+    cone.userData.baseZ = -0.009;
     g.add(cone);
     if (kind === 'woofer') this.cones.push(cone);
 
@@ -193,23 +198,25 @@ export class Boombox extends Design {
     const grille = new THREE.Mesh(
       disc(r * 1.005, 96),
       new THREE.MeshPhysicalMaterial({
-        color: '#1b1b1c',
-        metalness: 0.7,
-        roughness: 0.55,
+        color: '#18181a',
+        metalness: 0.6,
+        roughness: 0.62,
         alphaMap: withRepeat(perforatedAlpha(0.6), holes / 2, holes / 2 / 1.72),
-        normalMap: withRepeat(perforatedNormal(0.6), holes / 2, holes / 2 / 1.72),
-        normalScale: new THREE.Vector2(0.15, 0.15),
         transparent: true,
-        side: THREE.DoubleSide,
       }),
     );
+    // Mip-Bias gegen Moiré: aus normalem Abstand verschwimmen die Löcher wie auf einem Foto,
+    // beim Heranzoomen werden sie sichtbar.
+    grille.material.onBeforeCompile = (sh) => {
+      sh.fragmentShader = sh.fragmentShader.replace('texture2D( alphaMap, vAlphaMapUv ).g', 'texture2D( alphaMap, vAlphaMapUv, 1.6 ).g');
+    };
     grille.rotation.x = Math.PI / 2;
-    grille.position.z = FACE_T - 0.004;
+    grille.position.z = -0.0006;
     grille.userData.passThrough = true;
     g.add(grille);
     // Chromring
     const ring = new THREE.Mesh(new THREE.TorusGeometry(r + 0.0015, 0.0034, 20, 128), chrome());
-    ring.position.z = FACE_T - 0.0015;
+    ring.position.z = 0.0016;
     g.add(ring);
     return g;
   }
@@ -217,15 +224,15 @@ export class Boombox extends Design {
   private buildSpeakers() {
     for (const s of [-1, 1]) {
       const w = this.buildSpeaker(WOOF.r, 'woofer');
-      w.position.set(WOOF.x * s, CY + WOOF.y, FZ - FACE_T + 0.004);
+      w.position.set(WOOF.x * s, CY + WOOF.y, FZ);
       const t = this.buildSpeaker(TWEET.r, 'tweeter');
-      t.position.set(TWEET.x * s, CY + TWEET.y, FZ - FACE_T + 0.004);
+      t.position.set(TWEET.x * s, CY + TWEET.y, FZ);
       this.root.add(w, t);
     }
   }
 
   private buildDisplay() {
-    const dispMat = displayMaterial(this.vfd.texture, 5);
+    const dispMat = displayMaterial(this.vfd.texture, 8);
     const disp = new THREE.Mesh(new THREE.PlaneGeometry(DISP.w - 0.004, DISP.h - 0.004), dispMat);
     disp.position.set(DISP.x, CY + DISP.y, FZ - 0.012);
     disp.userData.noAO = true;
@@ -481,7 +488,7 @@ export class Boombox extends Design {
     if (f.playing) this.cassette.spin(dt, 1);
     // Membranen
     const ex = f.audio.bass * 0.0022 + f.audio.level[0] * 0.0006;
-    for (const c of this.cones) c.position.z = damp(c.position.z, ex, 40, dt);
+    for (const c of this.cones) c.position.z = damp(c.position.z, (c.userData.baseZ as number) + ex, 40, dt);
     // Tasten: PLAY rastet ein, PAUSE ebenfalls
     for (const [id, k] of this.keys) {
       const latched = (id === 'play' && (f.playing || this.pauseLatched)) || (id === 'pause' && this.pauseLatched);
@@ -500,7 +507,7 @@ export class Boombox extends Design {
     this.shownVolume = damp(this.shownVolume, f.volume, 18, dt);
     this.volumeKnob.rotation.y = -THREE.MathUtils.degToRad(-135 + 270 * this.shownVolume);
     this.toneKnob.rotation.y = -THREE.MathUtils.degToRad(-135 + 270 * this.tone);
-    this.ledMat.emissiveIntensity = f.playing ? 8 : 0.0;
+    this.ledMat.emissiveIntensity = f.playing ? 16 : 0.0;
     // VFD mit ~30 fps aktualisieren
     const key = `${Math.floor(f.time * 30)}`;
     if (key !== this.lastTitle) {

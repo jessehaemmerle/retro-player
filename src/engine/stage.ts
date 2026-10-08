@@ -151,7 +151,7 @@ export class Stage {
     container.appendChild(r.domElement);
     r.domElement.classList.add('stage-canvas');
 
-    this.camera = new THREE.PerspectiveCamera(35, 1, 0.01, 30);
+    this.camera = new THREE.PerspectiveCamera(35, 1, 0.02, 20);
     this.controls = new OrbitControls(this.camera, r.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
@@ -267,9 +267,9 @@ export class Stage {
       this.bloom.radius = spec.bloom.radius;
       this.bloom.threshold = spec.bloom.threshold;
     } else if (this.bloom) {
-      this.bloom.strength = 0.18;
-      this.bloom.radius = 0.35;
-      this.bloom.threshold = 4.5;
+      this.bloom.strength = 0.14;
+      this.bloom.radius = 0.18;
+      this.bloom.threshold = 6;
     }
     this.configureCamera(true);
   }
@@ -447,7 +447,7 @@ export class Stage {
       this.composer.addPass(gtao);
     }
     if (this.quality !== 'low') {
-      this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.18, 0.35, 4.5);
+      this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.14, 0.18, 6);
       this.composer.addPass(this.bloom);
     }
     this.composer.addPass(new OutputPass());

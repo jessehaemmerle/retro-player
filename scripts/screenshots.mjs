@@ -8,7 +8,7 @@ const only = process.argv[3] ? process.argv[3].split(',') : ['turntable', 'boomb
 const out = process.argv[4] ?? 'screenshots';
 const width = Number(process.env.W ?? 1600);
 const height = Number(process.env.H ?? 1000);
-const wait = Number(process.env.WAIT ?? 9000);
+const wait = Number(process.env.WAIT ?? 5000);
 fs.mkdirSync(out, { recursive: true });
 
 const executablePath = process.env.CHROME ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
@@ -24,6 +24,8 @@ page.on('pageerror', (e) => console.log('[pageerror]', e.message));
 for (const d of only) {
   const extra = process.env.PARAMS ?? '';
   await page.goto(`${base}?demo=1&design=${d}${extra}`, { waitUntil: 'load' });
+  // warten, bis das Gerät geladen und eingeblendet ist
+  await page.waitForSelector('#fade:not(.visible)', { state: 'attached', timeout: 180000 });
   await page.waitForTimeout(wait);
   await page.screenshot({ path: `${out}/${d}.png`, timeout: 180000 });
   console.log('saved', `${out}/${d}.png`);

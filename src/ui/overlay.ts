@@ -14,7 +14,7 @@ const HINTS: Record<string, string> = {
   boombox: 'Piano-Tasten oben drücken (▶ rastet ein, ◀◀/▶▶ wechseln den Titel). VOLUME-Knopf für die Lautstärke.',
   amplifier: 'POWER = Play/Pause · TUNING spult im Titel · SEEK STATION wechselt den Titel · MUTING schaltet stumm.',
   walkman: 'Tasten an der Oberkante drücken · Rändelrad links = Lautstärke · orange HOTLINE-Taste = stumm.',
-  discman: '▶❚❚ drücken · Rad links = Lautstärke · OPEN-Schieber rechts öffnet den Deckel · HOLD sperrt die Tasten.',
+  discman: '▶❚❚ drücken · Rad links = Lautstärke · OPEN-Schieber vorne öffnet den Deckel · HOLD sperrt die Tasten.',
 };
 
 export function mountUI(app: App, root: HTMLElement) {

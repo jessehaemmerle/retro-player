@@ -71,7 +71,7 @@ export class Interaction {
 
   add(c: Control): Control {
     this.controls.push(c);
-    c.object.traverse((o) => (o.userData.control = c));
+    c.object.userData.control = c;
     return c;
   }
 
@@ -85,16 +85,17 @@ export class Interaction {
     const rect = this.canvas.getBoundingClientRect();
     this.ndc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
     this.raycaster.setFromCamera(this.ndc, this.stage.camera);
-    const objs = this.controls.filter((c) => c.object.visible && (c.enabled?.() ?? true)).map((c) => c.object);
-    if (!objs.length) return null;
+    const active = new Set(this.controls.filter((c) => c.object.visible && (c.enabled?.() ?? true)));
+    if (!active.size) return null;
     // Auch verdeckende Gerätegeometrie testen, damit man nicht "durch" Teile greift
     const hits = this.raycaster.intersectObjects([this.stage.deviceRoot], true);
     for (const hit of hits) {
       let o: THREE.Object3D | null = hit.object;
       if (o.userData.noPick) continue;
+      // Das spezifischste (tiefste) aktive Bedienelement gewinnt
       while (o) {
         const c = o.userData.control as Control | undefined;
-        if (c && objs.includes(c.object)) return { control: c, hit };
+        if (c && active.has(c)) return { control: c, hit };
         o = o.parent;
       }
       // erster Treffer ist kein Bedienelement → Glas o. Ä. darf durchlassen
